@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import type { ClusterResult } from '~~/shared/types/clusters'
+import type { ClusterResult, IsochronePoint } from '~~/shared/types/clusters'
 
-defineProps<{ result: ClusterResult }>()
+defineProps<{
+  result: ClusterResult
+  rank: number
+  tidalRadiusPc: number | null
+  isochrone: IsochronePoint[]
+}>()
 </script>
 
 <template>
@@ -10,18 +15,14 @@ defineProps<{ result: ClusterResult }>()
       <h3 class="mb-3 text-sm font-semibold">
         CMD
       </h3>
-      <div class="min-h-64 flex items-center justify-center border border-gray-300 rounded-md border-dashed text-sm text-gray-400 dark:border-gray-700">
-        CMD plot placeholder — stars {{ result.starA }} / {{ result.starB }}
-      </div>
+      <CmdPlot :result="result" :rank="rank" :isochrone="isochrone" />
     </section>
 
     <section class="border border-gray-200 rounded-lg p-4 dark:border-gray-800">
       <h3 class="mb-3 text-sm font-semibold">
         Position
       </h3>
-      <div class="min-h-64 flex items-center justify-center border border-gray-300 rounded-md border-dashed text-sm text-gray-400 dark:border-gray-700">
-        Position plot placeholder — stars {{ result.starA }} / {{ result.starB }}
-      </div>
+      <PositionPlot :result="result" :rank="rank" :tidal-radius-pc="tidalRadiusPc" />
     </section>
   </div>
 </template>

@@ -1,0 +1,1 @@
+ALTER TABLE "clusters" ADD COLUMN "tidal_radius_pc" double precision;

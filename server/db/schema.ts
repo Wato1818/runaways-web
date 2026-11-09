@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { doublePrecision, index, integer, pgTableCreator, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { doublePrecision, index, integer, jsonb, pgTableCreator, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 
 const pgTable = pgTableCreator(name => name, 'snake_case')
 
@@ -22,6 +22,8 @@ export const users = pgTable('users', {
 export const clusters = pgTable('clusters', {
   id: uuid().defaultRandom().primaryKey(),
   name: text().unique().notNull(),
+  tidalRadiusPc: doublePrecision('tidal_radius_pc'),
+  isochrone: jsonb('isochrone').$type<[number, number][]>(),
   uploadedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
   ...timestamps
 })
@@ -61,4 +63,18 @@ export const clusterResults = pgTable('cluster_results', {
   uniqueIndex('cluster_results_pair_unique').on(t.clusterId, t.starA, t.starB),
   index('cluster_results_cluster_idx').on(t.clusterId),
   index('cluster_results_score_idx').on(t.clusterId, t.criteriaScore)
+])
+
+export const clusterImages = pgTable('cluster_images', {
+  id: uuid().defaultRandom().primaryKey(),
+  clusterId: uuid().notNull().references(() => clusters.id, { onDelete: 'cascade' }),
+  storagePath: text().notNull(),
+  originalName: text().notNull(),
+  label: text().notNull(),
+  mimeType: text().notNull(),
+  sizeBytes: integer().notNull(),
+  sortOrder: integer().notNull().default(0),
+  ...timestamps
+}, t => [
+  index('cluster_images_cluster_idx').on(t.clusterId)
 ])

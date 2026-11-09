@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ColumnDef, Table, VisibilityState } from '@tanstack/vue-table'
-import type { ClusterResult, ClusterSummary } from '~~/shared/types/clusters'
+import type { ClusterImage, ClusterResult, ClusterSummary, IsochronePoint } from '~~/shared/types/clusters'
 import { h } from 'vue'
 
 const { user, loggedIn, fetch: refreshSession } = useUserSession()
@@ -31,6 +31,22 @@ const { data: results, pending: resultsPending, error: resultsError } = await us
   () => selectedClusterId.value
     ? $fetch<ClusterResult[]>(`/api/clusters/${selectedClusterId.value}/results`)
     : Promise.resolve([] as ClusterResult[]),
+  { watch: [selectedClusterId] }
+)
+
+const { data: isochrone } = await useAsyncData(
+  'cluster-isochrone',
+  () => selectedClusterId.value
+    ? $fetch<IsochronePoint[]>(`/api/clusters/${selectedClusterId.value}/isochrone`)
+    : Promise.resolve([] as IsochronePoint[]),
+  { watch: [selectedClusterId] }
+)
+
+const { data: images, pending: imagesPending } = await useAsyncData(
+  'cluster-images',
+  () => selectedClusterId.value
+    ? $fetch<ClusterImage[]>(`/api/clusters/${selectedClusterId.value}/images`)
+    : Promise.resolve([] as ClusterImage[]),
   { watch: [selectedClusterId] }
 )
 
@@ -377,6 +393,13 @@ async function logout() {
         class="max-w-xs"
       />
 
+      <div v-if="imagesPending" class="h-24 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-900" />
+      <ClusterGallery
+        v-else-if="selectedCluster"
+        :images="images ?? []"
+        :cluster-name="selectedCluster.name"
+      />
+
       <p v-if="resultsPending" class="text-sm text-gray-500">
         Loading results…
       </p>
@@ -390,8 +413,8 @@ async function logout() {
           </p>
           <div class="flex flex-wrap gap-4 border-b border-gray-200 pb-4 dark:border-gray-800">
             <NCheckbox
-              v-for="tableColumn in table?.getAllLeafColumns().filter(column => column.getCanHide())" :key="tableColumn.id"
-              :model-value="tableColumn.getIsVisible()"
+              v-for="tableColumn in table?.getAllLeafColumns().filter(column => column.getCanHide())"
+              :key="tableColumn.id" :model-value="tableColumn.getIsVisible()"
               :label="typeof tableColumn.columnDef.header === 'string' ? tableColumn.columnDef.header : tableColumn.id"
               @update:model-value="tableColumn.toggleVisibility()"
             />
@@ -400,8 +423,7 @@ async function logout() {
 
         <NTable
           ref="table" v-model:column-visibility="columnVisibility" v-model:pagination="pagination"
-          v-model:expanded="expanded"
-          :columns="columns" :data="results ?? []" :_scroll-area="{
+          v-model:expanded="expanded" :columns="columns" :data="results ?? []" :_scroll-area="{
             type: 'always',
             _scrollAreaViewport: { class: 'max-h-[70vh] !overflow-y-auto' },
           }" enable-sorting enable-multi-sort
@@ -410,7 +432,12 @@ async function logout() {
             <span>Plots</span>
           </template>
           <template #expanded="{ row }">
-            <ResultPlots :result="row.original" />
+            <ResultPlots
+              :result="row.original"
+              :rank="row.index + 1"
+              :tidal-radius-pc="selectedCluster?.tidalRadiusPc ?? null"
+              :isochrone="isochrone ?? []"
+            />
           </template>
         </NTable>
       </template>

@@ -6,6 +6,7 @@ export default defineEventHandler(async () => {
     .select({
       id: clusters.id,
       name: clusters.name,
+      tidalRadiusPc: clusters.tidalRadiusPc,
       createdAt: clusters.createdAt,
       resultCount: sql<number>`count(${clusterResults.id})::int`
     })
